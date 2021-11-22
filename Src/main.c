@@ -48,9 +48,7 @@ static CPU_STK DisTaskStk[DIS_TASK_STK_SIZE];
 static CPU_STK SendTaskStk[DIS_TASK_STK_SIZE];
 
 /* Semaphore */
-OS_SEM semData;
-// OS_SEM semT;
-//OS_SEM semS;
+OS_SEM sem;
 
 /* Function Prototype */
 static void AppTaskStart(void *p_arg);
@@ -61,8 +59,10 @@ static void SendTask(void *p_arg);
   * @brief  The application entry point.
   * @retval int
   */
- /** GLOBAL VARIABLE **/
-
+/** GLOBAL VARIABLE **/
+uint8_t counter_D = 0;
+uint8_t counter_T = 0;
+uint8_t count = 0; //count people
 
 uint16_t result = 0;
 uint8_t Temperature = 0;
@@ -86,17 +86,6 @@ int main(void)
       (CPU_CHAR *)"Semaphore to protect share resource",
       (OS_SEM_CTR)1,
       (OS_ERR *)&os_err);
-  // OSSemCreate(
-  //     (OS_SEM *)&semT,
-  //     (CPU_CHAR *)"Semaphore",
-  //     (OS_SEM_CTR)1,
-  //     (OS_ERR *)&os_err);
-  // OSSemCreate(
-  //     (OS_SEM *)&semS,
-  //     (CPU_CHAR *)"ProtectSemaphore Send Data",
-  //     (OS_SEM_CTR)0,
-  //     (OS_ERR *)&os_err);
-
   OSTaskCreate(
       /* pointer to task control block */
       (OS_TCB *)&AppTaskStartTCB,
@@ -250,16 +239,35 @@ static void DisTask(void *p_arg)
   while (DEF_TRUE)
   {
     OSSemPend(
-        (OS_SEM *)&semData,
+        (OS_SEM *)&sem,
         (OS_TICK)0,
         (OS_OPT)OS_OPT_PEND_BLOCKING,
         (CPU_TS *)NULL,
         (OS_ERR *)&os_err);
 
-    HCSR04_Read();    
+    HCSR04_Read();
+    if (Distance <= 10 && Distance != 0) // !=0 to avoid initial value
+    {
+      HAL_GPIO_WritePin(GPIOA, LD2_Pin, 1);
+      counter_D = 1;
+    }
 
+    if ((counter_T & counter_D) == 1 && HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5) == 1) //ppl goout - check output status of HCSR04
+    {
+      if (count == 0) // prevent negative value
+        count = 0;
+      else
+        count--;
+      HAL_UART_Transmit(&huart2, "Count PP out \n\r", 15, 100);
+      counter_T = 0;
+      counter_D = 0;
+    }
+    else
+    {
+      counter_T = 0; //reset Temperature counter
+    }
     OSSemPost(
-        (OS_SEM *)&semData,
+        (OS_SEM *)&sem,
         (OS_OPT)OS_OPT_POST_1,
         (OS_ERR *)&os_err);
     OSTimeDlyHMSM(0, 0, 0, 700, OS_OPT_TIME_HMSM_STRICT, &os_err);
@@ -272,81 +280,91 @@ static void TemperatureTask(void *p_arg)
   while (DEF_TRUE)
   {
     OSSemPend(
-        (OS_SEM *)&semData,
+        (OS_SEM *)&sem,
         (OS_TICK)0,
         (OS_OPT)OS_OPT_PEND_BLOCKING,
         (CPU_TS *)NULL,
         (OS_ERR *)&os_err);
 
-    result = DS18B20_Operation(); 
+    result = DS18B20_Operation();
     Temperature = floor(result / 16.00 * 1.00);
-
-    OSSemPost(
-        (OS_SEM *)&semData,
-        (OS_OPT)OS_OPT_POST_1,
-        (OS_ERR *)&os_err);
-    OSTimeDlyHMSM(0, 0, 0, 500, OS_OPT_TIME_HMSM_STRICT, &os_err);
+    if (Temperature >= 28 && Temperature <= 32)
+    {
+      HAL_GPIO_WritePin(GPIOA, LD2_Pin, 0);
+      counter_T = 1;
+    }
+    if ((counter_T & counter_D) == 1 && HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_5) == 0) // comein - LD output of DS18b20
+    {
+      count++; // Dis<=10, 27 <= T <=32
+      counter_T = 0;
+      counter_D = 0;
+      HAL_UART_Transmit(&huart2, "Count PP in \n\r", 15, 100);
+    }
+      OSSemPost(
+          (OS_SEM *)&sem,
+          (OS_OPT)OS_OPT_POST_1,
+          (OS_ERR *)&os_err);
+      OSTimeDlyHMSM(0, 0, 0, 500, OS_OPT_TIME_HMSM_STRICT, &os_err);
+    }
   }
-}
 
-static void SendTask(void *p_arg)
-{
-
-  OS_ERR os_err;
-  uint8_t msg[50];
-
-  while (DEF_TRUE)
+  static void SendTask(void *p_arg)
   {
-    OSSemPend(
-        (OS_SEM *)&semData,
-        (OS_TICK)0,
-        (OS_OPT)OS_OPT_PEND_BLOCKING,
-        (CPU_TS *)NULL,
-        (OS_ERR *)&os_err);
 
+    OS_ERR os_err;
+    uint8_t msg[50];
 
-    sprintf(msg, "DIS: %d | TEM: %d \n\r", Distance, Temperature);
-    HAL_UART_Transmit(&huart2, msg, strlen(msg), 100);
+    while (DEF_TRUE)
+    {
+      OSSemPend(
+          (OS_SEM *)&sem,
+          (OS_TICK)0,
+          (OS_OPT)OS_OPT_PEND_BLOCKING,
+          (CPU_TS *)NULL,
+          (OS_ERR *)&os_err);
 
-    OSSemPost(
-        (OS_SEM *)&semData,
-        (OS_OPT)OS_OPT_POST_1,
-        (OS_ERR *)&os_err);
-    OSTimeDlyHMSM(0, 0, 1, 500, OS_OPT_TIME_HMSM_STRICT, &os_err);
+      sprintf(msg, "DIS: %d | TEM: %d | C: %d \n\r", Distance, Temperature,count);
+      HAL_UART_Transmit(&huart2, msg, strlen(msg), 100);
+
+      OSSemPost(
+          (OS_SEM *)&sem,
+          (OS_OPT)OS_OPT_POST_1,
+          (OS_ERR *)&os_err);
+      OSTimeDlyHMSM(0, 0, 1, 500, OS_OPT_TIME_HMSM_STRICT, &os_err);
+    }
   }
-}
-/* USER CODE END 4 */
+  /* USER CODE END 4 */
 
-/**
+  /**
   * @brief  This function is executed in case of error occurrence.
   * @retval None
   */
-void Error_Handler(void)
-{
-  /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
+  void Error_Handler(void)
   {
+    /* USER CODE BEGIN Error_Handler_Debug */
+    /* User can add his own implementation to report the HAL error return state */
+    __disable_irq();
+    while (1)
+    {
+    }
+    /* USER CODE END Error_Handler_Debug */
   }
-  /* USER CODE END Error_Handler_Debug */
-}
 
 #ifdef USE_FULL_ASSERT
-/**
+  /**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.
   * @param  file: pointer to the source file name
   * @param  line: assert_param error line source number
   * @retval None
   */
-void assert_failed(uint8_t *file, uint32_t line)
-{
-  /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
+  void assert_failed(uint8_t * file, uint32_t line)
+  {
+    /* USER CODE BEGIN 6 */
+    /* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-  /* USER CODE END 6 */
-}
+    /* USER CODE END 6 */
+  }
 #endif /* USE_FULL_ASSERT */
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+  /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
