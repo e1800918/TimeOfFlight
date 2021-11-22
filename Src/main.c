@@ -300,71 +300,81 @@ static void TemperatureTask(void *p_arg)
       counter_D = 0;
       HAL_UART_Transmit(&huart2, "Count PP in \n\r", 15, 100);
     }
-      OSSemPost(
-          (OS_SEM *)&sem,
-          (OS_OPT)OS_OPT_POST_1,
-          (OS_ERR *)&os_err);
-      OSTimeDlyHMSM(0, 0, 0, 500, OS_OPT_TIME_HMSM_STRICT, &os_err);
-    }
+    OSSemPost(
+        (OS_SEM *)&sem,
+        (OS_OPT)OS_OPT_POST_1,
+        (OS_ERR *)&os_err);
+    OSTimeDlyHMSM(0, 0, 0, 500, OS_OPT_TIME_HMSM_STRICT, &os_err);
   }
+}
 
-  static void SendTask(void *p_arg)
+static void SendTask(void *p_arg)
+{
+
+  OS_ERR os_err;
+  uint8_t msg[50];
+
+  while (DEF_TRUE)
   {
+    OSSemPend(
+        (OS_SEM *)&sem,
+        (OS_TICK)0,
+        (OS_OPT)OS_OPT_PEND_BLOCKING,
+        (CPU_TS *)NULL,
+        (OS_ERR *)&os_err);
 
-    OS_ERR os_err;
-    uint8_t msg[50];
-
-    while (DEF_TRUE)
+    /* LED SETUP */
+    if (count != 0)
     {
-      OSSemPend(
-          (OS_SEM *)&sem,
-          (OS_TICK)0,
-          (OS_OPT)OS_OPT_PEND_BLOCKING,
-          (CPU_TS *)NULL,
-          (OS_ERR *)&os_err);
-
-      sprintf(msg, "DIS: %d | TEM: %d | C: %d \n\r", Distance, Temperature,count);
-      HAL_UART_Transmit(&huart2, msg, strlen(msg), 100);
-
-      OSSemPost(
-          (OS_SEM *)&sem,
-          (OS_OPT)OS_OPT_POST_1,
-          (OS_ERR *)&os_err);
-      OSTimeDlyHMSM(0, 0, 1, 500, OS_OPT_TIME_HMSM_STRICT, &os_err);
+      Set_Pin_Input(GPIOA, GPIO_PIN_4);
     }
-  }
-  /* USER CODE END 4 */
+    else
+    {
+      Set_Pin_Output(GPIOA, GPIO_PIN_4);
+      HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 0);
+    }
+    sprintf(msg, "DIS: %d | TEM: %d | C: %d \n\r", Distance, Temperature, count);
+    HAL_UART_Transmit(&huart2, msg, strlen(msg), 100);
 
-  /**
+    OSSemPost(
+        (OS_SEM *)&sem,
+        (OS_OPT)OS_OPT_POST_1,
+        (OS_ERR *)&os_err);
+    OSTimeDlyHMSM(0, 0, 1, 500, OS_OPT_TIME_HMSM_STRICT, &os_err);
+  }
+}
+/* USER CODE END 4 */
+
+/**
   * @brief  This function is executed in case of error occurrence.
   * @retval None
   */
-  void Error_Handler(void)
+void Error_Handler(void)
+{
+  /* USER CODE BEGIN Error_Handler_Debug */
+  /* User can add his own implementation to report the HAL error return state */
+  __disable_irq();
+  while (1)
   {
-    /* USER CODE BEGIN Error_Handler_Debug */
-    /* User can add his own implementation to report the HAL error return state */
-    __disable_irq();
-    while (1)
-    {
-    }
-    /* USER CODE END Error_Handler_Debug */
   }
+  /* USER CODE END Error_Handler_Debug */
+}
 
 #ifdef USE_FULL_ASSERT
-  /**
+/**
   * @brief  Reports the name of the source file and the source line number
   *         where the assert_param error has occurred.
   * @param  file: pointer to the source file name
   * @param  line: assert_param error line source number
   * @retval None
   */
-  void assert_failed(uint8_t * file, uint32_t line)
-  {
-    /* USER CODE BEGIN 6 */
-    /* User can add his own implementation to report the file name and line number,
+void assert_failed(uint8_t *file, uint32_t line)
+{
+  /* USER CODE BEGIN 6 */
+  /* User can add his own implementation to report the file name and line number,
      ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-    /* USER CODE END 6 */
-  }
+  /* USER CODE END 6 */
+}
 #endif /* USE_FULL_ASSERT */
 
-  /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
