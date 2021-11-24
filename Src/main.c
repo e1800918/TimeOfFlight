@@ -60,9 +60,9 @@ static void SendTask(void *p_arg);
   * @retval int
   */
 /** GLOBAL VARIABLE **/
-uint8_t counter_D = 0;
-uint8_t counter_T = 0;
-uint8_t count = 0; //count people
+uint16_t counter_D = 0;
+uint16_t counter_T = 0;
+uint16_t count = 0; //count people
 
 uint16_t result = 0;
 uint8_t Temperature = 0;
@@ -183,7 +183,7 @@ static void AppTaskStart(void *p_arg)
   MX_TIM4_Init();
   MX_TIM6_Init();
   MX_USART2_UART_Init();
-  //MX_USART3_UART_Init();
+  MX_USART3_UART_Init();
 
   HAL_TIM_Base_Start(&htim4);
   HAL_TIM_Base_Start(&htim6);
@@ -300,6 +300,10 @@ static void TemperatureTask(void *p_arg)
       counter_D = 0;
       HAL_UART_Transmit(&huart2, "Count PP in \n\r", 15, 100);
     }
+    //     else
+    // {
+    //   counter_D = 0; //reset Temperature counter
+    // }
     OSSemPost(
         (OS_SEM *)&sem,
         (OS_OPT)OS_OPT_POST_1,
@@ -313,6 +317,8 @@ static void SendTask(void *p_arg)
 
   OS_ERR os_err;
   uint8_t msg[50];
+    uint8_t buf[30];
+    uint8_t test=5;
 
   while (DEF_TRUE)
   {
@@ -333,8 +339,15 @@ static void SendTask(void *p_arg)
       Set_Pin_Output(GPIOA, GPIO_PIN_4);
       HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 0);
     }
-    sprintf(msg, "DIS: %d | TEM: %d | C: %d \n\r", Distance, Temperature, count);
+  /* SEND DATA*/
+
+   sprintf(buf,"%d",count);
+  HAL_UART_Transmit(&huart3, buf, sizeof(buf), 100);
+
+   sprintf(msg, "DIS: %d | TEM: %d | C: %d \n\r", Distance, Temperature, count);
     HAL_UART_Transmit(&huart2, msg, strlen(msg), 100);
+
+
 
     OSSemPost(
         (OS_SEM *)&sem,
