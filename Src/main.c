@@ -339,7 +339,7 @@ static void SendTask(void *p_arg)
       Set_Pin_Output(GPIOA, GPIO_PIN_4);
       HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, 0);
     }
-  /* SEND DATA*/
+  /*SEND DATA*/
 
    sprintf(buf,"%d",count);
   HAL_UART_Transmit(&huart3, buf, sizeof(buf), 100);

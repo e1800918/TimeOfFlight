@@ -181,7 +181,7 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* tim_baseHandle)
 
   if(tim_baseHandle->Instance==TIM6)
   {
-  /* USER CODE BEGIN TIM6_MspDeInit 0 */
+  /*USER CODE BEGIN TIM6_MspDeInit 0 */
 
   /* USER CODE END TIM6_MspDeInit 0 */
     /* Peripheral clock disable */

@@ -47,7 +47,7 @@
 #include "stm32l1xx.h"
 
 /**
-  * @}
+  *@}
   */
 
 /** @addtogroup STM32L1xx_System_Private_TypesDefinitions
@@ -410,7 +410,7 @@ void SystemInit_ExtMemCtl(void)
   
 }
 #endif /* DATA_IN_ExtSRAM */
-#endif /* STM32L151xD || STM32L152xD || STM32L162xD */
+#endif /*STM32L151xD || STM32L152xD || STM32L162xD */
 
 /**
   * @}

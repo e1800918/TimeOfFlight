@@ -415,4 +415,3 @@ SysTick_Handler:
 	b OS_CPU_SysTickHandler
 	b .
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
