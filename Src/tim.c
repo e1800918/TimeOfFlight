@@ -5,7 +5,6 @@
   *          of the TIM instances.
   ******************************************************************************
   * @attention
-  *
   * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
   * All rights reserved.</center></h2>
   *

@@ -2,8 +2,7 @@
   ******************************************************************************
   * @file    system_stm32l1xx.c
   * @author  MCD Application Team
-  * @brief   CMSIS Cortex-M3 Device Peripheral Access Layer System Source File.
-  *             
+  * @brief   CMSIS Cortex-M3 Device Peripheral Access Layer System Source File.            
   *   This file provides two functions and one global variable to be called from 
   *   user application:
   *      - SystemInit(): This function is called at startup just after reset and 

@@ -1,8 +1,8 @@
 /* USER CODE BEGIN Header */
 /**
   ******************************************************************************
-  * @file         stm32l1xx_hal_msp.c
-  * @brief        This file provides code for the MSP Initialization
+  *@file         stm32l1xx_hal_msp.c
+  *@brief        This file provides code for the MSP Initialization
   *               and de-Initialization codes.
   ******************************************************************************
   * @attention

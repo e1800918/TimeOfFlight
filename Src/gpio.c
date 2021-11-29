@@ -5,7 +5,6 @@
   *          of all used GPIO pins.
   ******************************************************************************
   * @attention
-  *
   * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
   * All rights reserved.</center></h2>
   *
@@ -13,7 +12,6 @@
   * the "License"; You may not use this file except in compliance with the
   * License. You may obtain a copy of the License at:
   *                        opensource.org/licenses/BSD-3-Clause
-  *
   ******************************************************************************
   */
 
